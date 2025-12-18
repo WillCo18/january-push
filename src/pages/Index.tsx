@@ -5,12 +5,16 @@ import { CalendarTab } from "@/components/tabs/CalendarTab";
 import { FriendsTab } from "@/components/tabs/FriendsTab";
 import { ProfileTab } from "@/components/tabs/ProfileTab";
 import { useChallenge } from "@/hooks/useChallenge";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 type Tab = "home" | "calendar" | "friends" | "profile";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const challenge = useChallenge();
+  const { signOut } = useAuth();
 
   const renderTab = () => {
     switch (activeTab) {
@@ -29,6 +33,19 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      {/* Logout button */}
+      <div className="fixed top-4 right-4 z-50">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={signOut}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <LogOut className="h-4 w-4 mr-1.5" />
+          Log out
+        </Button>
+      </div>
+
       {renderTab()}
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
