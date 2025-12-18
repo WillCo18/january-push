@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGroups } from "@/hooks/useGroups";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Check, ArrowLeft } from "lucide-react";
+import { Copy, Check, ArrowLeft, Loader2 } from "lucide-react";
 
-type Step = "choice" | "create" | "success";
+type Step = "choice" | "create" | "success" | "join";
 
 interface GroupOnboardingPageProps {
   onComplete: () => void;
@@ -15,8 +17,70 @@ export const GroupOnboardingPage = ({ onComplete }: GroupOnboardingPageProps) =>
   const [step, setStep] = useState<Step>("choice");
   const [groupName, setGroupName] = useState("");
   const [inviteLink, setInviteLink] = useState("");
+  const [inviteInput, setInviteInput] = useState("");
   const [copied, setCopied] = useState(false);
+  const [joining, setJoining] = useState(false);
   const { createGroup, loading } = useGroups();
+  const { user } = useAuth();
+
+  const extractInviteCode = (input: string): string => {
+    const trimmed = input.trim().toUpperCase();
+    // Check if it's a full URL
+    const urlMatch = trimmed.match(/\/JOIN\/([A-Z0-9]{8})/i);
+    if (urlMatch) return urlMatch[1].toUpperCase();
+    // Otherwise treat as raw code
+    return trimmed;
+  };
+
+  const handleJoinGroup = async () => {
+    if (!user) return;
+    
+    const code = extractInviteCode(inviteInput);
+    if (code.length !== 8) {
+      toast.error("Invalid invite code format");
+      return;
+    }
+
+    setJoining(true);
+    try {
+      // Find the group
+      const { data: group, error: groupError } = await supabase
+        .from("groups")
+        .select("id, name")
+        .eq("invite_code", code)
+        .maybeSingle();
+
+      if (groupError || !group) {
+        toast.error("Invalid invite link");
+        return;
+      }
+
+      // Join the group
+      const { error: joinError } = await supabase
+        .from("group_memberships")
+        .insert({
+          user_id: user.id,
+          group_id: group.id,
+        });
+
+      if (joinError) {
+        if (joinError.code === "23505") {
+          toast.error("You're already in a group");
+        } else {
+          toast.error("Failed to join group");
+        }
+        return;
+      }
+
+      toast.success(`Joined "${group.name}"!`);
+      onComplete();
+    } catch (err) {
+      console.error("Error joining group:", err);
+      toast.error("Something went wrong");
+    } finally {
+      setJoining(false);
+    }
+  };
 
   const handleCreateGroup = async () => {
     if (groupName.trim().length < 2) {
@@ -60,11 +124,56 @@ export const GroupOnboardingPage = ({ onComplete }: GroupOnboardingPageProps) =>
             </Button>
             
             <button
-              onClick={() => toast.info("Invite link joining coming soon!")}
+              onClick={() => setStep("join")}
               className="text-muted-foreground hover:text-foreground transition-colors text-sm"
             >
               I have an invite link
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === "join") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-6">
+          <button
+            onClick={() => setStep("choice")}
+            className="flex items-center text-muted-foreground hover:text-foreground transition-colors text-sm"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back
+          </button>
+          
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-semibold text-foreground">Join a group</h1>
+            <p className="text-muted-foreground text-sm">Paste an invite link or code</p>
+          </div>
+          
+          <div className="space-y-4">
+            <Input
+              value={inviteInput}
+              onChange={(e) => setInviteInput(e.target.value)}
+              placeholder="Paste invite link or code"
+              className="h-12"
+            />
+            
+            <Button
+              onClick={handleJoinGroup}
+              disabled={joining || inviteInput.trim().length < 8}
+              className="w-full bg-[#00A699] hover:bg-[#00A699]/90 text-white h-12"
+            >
+              {joining ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Joining...
+                </>
+              ) : (
+                "Join"
+              )}
+            </Button>
           </div>
         </div>
       </div>
