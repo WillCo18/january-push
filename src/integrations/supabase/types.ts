@@ -49,6 +49,38 @@ export type Database = {
           },
         ]
       }
+      daily_summary: {
+        Row: {
+          capped_reps: number
+          is_complete: boolean
+          log_date: string
+          total_reps: number
+          user_id: string
+        }
+        Insert: {
+          capped_reps?: number
+          is_complete?: boolean
+          log_date: string
+          total_reps?: number
+          user_id: string
+        }
+        Update: {
+          capped_reps?: number
+          is_complete?: boolean
+          log_date?: string
+          total_reps?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_summary_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_memberships: {
         Row: {
           group_id: string
