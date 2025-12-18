@@ -1,110 +1,92 @@
 import { useState } from "react";
 import { ProgressRing } from "@/components/ProgressRing";
-import { StatCard } from "@/components/StatCard";
-import { LogPressUpsSheet } from "@/components/LogPressUpsSheet";
+import { AddRepsSheet } from "@/components/AddRepsSheet";
 import { Button } from "@/components/ui/button";
-import { Flame, Trophy, Target, Plus } from "lucide-react";
+import { Plus, Check } from "lucide-react";
+import { useActivityLogs } from "@/hooks/useActivityLogs";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
-interface HomeTabProps {
-  challenge: ReturnType<typeof import("@/hooks/useChallenge").useChallenge>;
-}
-
-export const HomeTab = ({ challenge }: HomeTabProps) => {
-  const [isLogSheetOpen, setIsLogSheetOpen] = useState(false);
-  
-  const { 
-    currentDay, 
-    todayCount, 
-    totalCount, 
-    completedDays, 
-    currentStreak, 
+export const HomeTab = () => {
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const {
+    todayReps,
+    loading,
+    groupName,
+    addReps,
+    isComplete,
+    remaining,
+    progress,
     dailyTarget,
-    totalDays,
-    saveLog 
-  } = challenge;
+  } = useActivityLogs();
 
-  const todayProgress = Math.min((todayCount / dailyTarget) * 100, 100);
-  const remaining = Math.max(0, dailyTarget - todayCount);
-
-  const handleSaveLog = (count: number) => {
-    saveLog(currentDay, count);
+  const handleAddReps = async (reps: number, date?: string) => {
+    const success = await addReps(reps, date);
+    if (success) {
+      toast.success(`Added ${reps} reps!`);
+    } else {
+      toast.error("Failed to add reps");
+    }
+    return success;
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
-    <div className="px-4 pt-safe">
+    <div className="px-4 pt-safe pb-24">
       {/* Header */}
-      <header className="pt-6 pb-4">
-        <p className="text-sm text-muted-foreground">Day {currentDay} of {totalDays}</p>
-        <h1 className="text-2xl font-bold text-foreground">January 100 Challenge</h1>
+      <header className="pt-6 pb-8">
+        <p className="text-sm text-muted-foreground mb-1">Your group</p>
+        <h1 className="text-2xl font-semibold text-foreground">{groupName || "January 100"}</h1>
       </header>
 
-      {/* Main Progress Ring */}
-      <div className="flex flex-col items-center py-8">
-        <ProgressRing progress={todayProgress} size={200} strokeWidth={14}>
-          <div className="text-center">
-            <p className="text-5xl font-bold text-foreground">{todayCount}</p>
-            <p className="text-sm text-muted-foreground">of {dailyTarget}</p>
+      {/* Main Progress Card */}
+      <div className="bg-card rounded-2xl p-8 shadow-sm border border-border/50">
+        <div className="flex flex-col items-center">
+          <ProgressRing progress={progress} size={200} strokeWidth={14}>
+            <div className="text-center">
+              <p className="text-5xl font-bold text-foreground">{todayReps}</p>
+              <p className="text-sm text-muted-foreground">/ {dailyTarget}</p>
+            </div>
+          </ProgressRing>
+
+          <div className="mt-6 text-center">
+            {isComplete ? (
+              <div className="flex items-center gap-2 text-[#00A699]">
+                <Check className="h-5 w-5" />
+                <span className="font-medium">Complete!</span>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                <span className="font-semibold text-foreground">{remaining}</span> to go
+              </p>
+            )}
           </div>
-        </ProgressRing>
-        
-        <p className="mt-4 text-muted-foreground text-center">
-          {remaining > 0 
-            ? `${remaining} press-ups to go today`
-            : "Today's target complete! 🎉"}
-        </p>
+        </div>
       </div>
 
-      {/* Log Button */}
-      <div className="px-4 mb-8">
-        <Button 
-          size="xl" 
-          className="w-full"
-          onClick={() => setIsLogSheetOpen(true)}
+      {/* Add Reps Button */}
+      <div className="fixed bottom-24 left-4 right-4 max-w-md mx-auto">
+        <Button
+          className="w-full h-14 bg-[#00A699] hover:bg-[#00A699]/90 text-white text-lg shadow-lg"
+          onClick={() => setIsSheetOpen(true)}
         >
           <Plus className="h-5 w-5 mr-2" />
-          Log Press-Ups
+          Add Reps
         </Button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-3 mb-8">
-        <StatCard
-          icon={Flame}
-          label="Current Streak"
-          value={currentStreak}
-          subtitle="days"
-          variant="warning"
-        />
-        <StatCard
-          icon={Trophy}
-          label="Total Count"
-          value={totalCount.toLocaleString()}
-          subtitle="press-ups"
-          variant="success"
-        />
-        <StatCard
-          icon={Target}
-          label="Days Complete"
-          value={`${completedDays}/${currentDay}`}
-          subtitle="target hit"
-          variant="default"
-        />
-        <StatCard
-          icon={Target}
-          label="Avg Per Day"
-          value={currentDay > 0 ? Math.round(totalCount / currentDay) : 0}
-          subtitle="press-ups"
-          variant="default"
-        />
-      </div>
-
-      {/* Log Sheet */}
-      <LogPressUpsSheet
-        isOpen={isLogSheetOpen}
-        onClose={() => setIsLogSheetOpen(false)}
-        onSave={handleSaveLog}
-        currentCount={todayCount}
-        target={dailyTarget}
+      {/* Add Reps Sheet */}
+      <AddRepsSheet
+        isOpen={isSheetOpen}
+        onClose={() => setIsSheetOpen(false)}
+        onAdd={handleAddReps}
       />
     </div>
   );

@@ -19,7 +19,7 @@ const Index = () => {
   const renderTab = () => {
     switch (activeTab) {
       case "home":
-        return <HomeTab challenge={challenge} />;
+        return <HomeTab />;
       case "calendar":
         return <CalendarTab challenge={challenge} />;
       case "friends":
@@ -27,7 +27,7 @@ const Index = () => {
       case "profile":
         return <ProfileTab challenge={challenge} />;
       default:
-        return <HomeTab challenge={challenge} />;
+        return <HomeTab />;
     }
   };
 
