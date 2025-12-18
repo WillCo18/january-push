@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { LeaderboardRow } from "@/components/LeaderboardRow";
 import { Button } from "@/components/ui/button";
 import { Share2, Loader2 } from "lucide-react";
@@ -5,6 +6,7 @@ import { toast } from "sonner";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 
 export const FriendsTab = () => {
+  const navigate = useNavigate();
   const { members, groupName, inviteCode, loading } = useLeaderboard();
 
   const handleShare = async () => {
@@ -20,8 +22,7 @@ export const FriendsTab = () => {
   };
 
   const handleMemberClick = (userId: string) => {
-    // Will navigate to journey page in next prompt
-    toast.info("Journey page coming soon!");
+    navigate(`/journey/${userId}`);
   };
 
   if (loading) {

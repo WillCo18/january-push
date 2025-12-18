@@ -1,20 +1,20 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { HomeTab } from "@/components/tabs/HomeTab";
 import { CalendarTab } from "@/components/tabs/CalendarTab";
 import { FriendsTab } from "@/components/tabs/FriendsTab";
 import { ProfileTab } from "@/components/tabs/ProfileTab";
 import { useChallenge } from "@/hooks/useChallenge";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { Settings } from "lucide-react";
 
 type Tab = "home" | "calendar" | "friends" | "profile";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const challenge = useChallenge();
-  const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   const renderTab = () => {
     switch (activeTab) {
@@ -33,16 +33,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Logout button */}
+      {/* Settings button */}
       <div className="fixed top-4 right-4 z-50">
         <Button
           variant="ghost"
-          size="sm"
-          onClick={signOut}
+          size="icon"
+          onClick={() => navigate("/settings")}
           className="text-muted-foreground hover:text-foreground"
         >
-          <LogOut className="h-4 w-4 mr-1.5" />
-          Log out
+          <Settings className="h-5 w-5" />
         </Button>
       </div>
 

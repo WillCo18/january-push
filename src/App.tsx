@@ -11,6 +11,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { SetNicknamePage } from "./pages/SetNicknamePage";
 import { GroupOnboardingPage } from "./pages/GroupOnboardingPage";
 import { JoinGroupPage, getAndClearInviteCode } from "./pages/JoinGroupPage";
+import { JourneyPage } from "./pages/JourneyPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -164,6 +166,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Index />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/journey/:userId"
+        element={
+          <ProtectedRoute>
+            <JourneyPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />
