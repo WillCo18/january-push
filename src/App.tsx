@@ -9,16 +9,18 @@ import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import { LoginPage } from "./pages/LoginPage";
 import { SetNicknamePage } from "./pages/SetNicknamePage";
+import { GroupOnboardingPage } from "./pages/GroupOnboardingPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
-// Protected route wrapper with nickname check
+// Protected route wrapper with nickname and group check
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [hasNickname, setHasNickname] = useState(false);
+  const [hasGroup, setHasGroup] = useState(false);
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -28,17 +30,29 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       }
 
       try {
-        const { data, error } = await supabase
+        // Check nickname
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("nickname")
           .eq("id", user.id)
           .maybeSingle();
 
-        if (error) throw error;
-        setHasNickname(!!data?.nickname);
+        if (profileError) throw profileError;
+        setHasNickname(!!profile?.nickname);
+
+        // Check group membership
+        const { data: membership, error: memberError } = await supabase
+          .from("group_memberships")
+          .select("group_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (memberError) throw memberError;
+        setHasGroup(!!membership);
       } catch (err) {
         console.error("Error checking profile:", err);
         setHasNickname(false);
+        setHasGroup(false);
       } finally {
         setCheckingProfile(false);
       }
@@ -63,6 +77,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!hasNickname) {
     return <SetNicknamePage onComplete={() => setHasNickname(true)} />;
+  }
+
+  if (!hasGroup) {
+    return <GroupOnboardingPage onComplete={() => setHasGroup(true)} />;
   }
 
   return <>{children}</>;
