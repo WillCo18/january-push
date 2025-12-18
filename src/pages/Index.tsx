@@ -23,7 +23,7 @@ const Index = () => {
       case "calendar":
         return <CalendarTab challenge={challenge} />;
       case "friends":
-        return <FriendsTab challenge={challenge} />;
+        return <FriendsTab />;
       case "profile":
         return <ProfileTab challenge={challenge} />;
       default:
