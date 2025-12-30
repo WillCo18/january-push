@@ -56,6 +56,8 @@ export const SettingsPage = () => {
   const [newGroupName, setNewGroupName] = useState("");
   const [creating, setCreating] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const handleCopyLink = async (inviteCode: string) => {
     const link = `${window.location.origin}/join/${inviteCode}`;
@@ -123,6 +125,54 @@ export const SettingsPage = () => {
       toast.error(err.message || "Failed to create group");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleResetDatabase = async () => {
+    if (!user) return;
+
+    setResetting(true);
+    try {
+      // Delete all activity logs
+      const { error: logsError } = await supabase
+        .from("activity_logs")
+        .delete()
+        .neq("user_id", "00000000-0000-0000-0000-000000000000"); // Delete all
+
+      if (logsError) throw logsError;
+
+      // Delete all group memberships
+      const { error: membershipsError } = await supabase
+        .from("group_memberships")
+        .delete()
+        .neq("user_id", "00000000-0000-0000-0000-000000000000"); // Delete all
+
+      if (membershipsError) throw membershipsError;
+
+      // Delete all groups
+      const { error: groupsError } = await supabase
+        .from("groups")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
+
+      if (groupsError) throw groupsError;
+
+      // Delete all profiles except current user
+      const { error: profilesError } = await supabase
+        .from("profiles")
+        .delete()
+        .neq("id", user.id);
+
+      if (profilesError) throw profilesError;
+
+      toast.success("Database reset successfully!");
+      setResetConfirm(false);
+      refetch();
+    } catch (err: any) {
+      console.error("Reset error:", err);
+      toast.error(err.message || "Failed to reset database");
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -267,9 +317,23 @@ export const SettingsPage = () => {
           </Button>
         )}
 
+        {/* Reset Database (Admin Only) */}
+        <div className="mb-4 p-4 bg-destructive/10 rounded-xl border border-destructive/20">
+          <p className="text-sm text-muted-foreground mb-3">
+            <strong className="text-destructive">Danger Zone:</strong> Reset all data and start fresh (keeps your account)
+          </p>
+          <Button
+            variant="destructive"
+            className="w-full"
+            onClick={() => setResetConfirm(true)}
+          >
+            Reset Database
+          </Button>
+        </div>
+
         {/* Logout */}
         <Button
-          variant="destructive"
+          variant="outline"
           className="w-full"
           onClick={signOut}
         >
@@ -331,7 +395,7 @@ export const SettingsPage = () => {
             <DialogTitle>Create a new group</DialogTitle>
             <DialogDescription>Give your group a name</DialogDescription>
           </DialogHeader>
-          
+
           <Input
             value={newGroupName}
             onChange={(e) => setNewGroupName(e.target.value)}
@@ -339,7 +403,7 @@ export const SettingsPage = () => {
             className="mt-4"
             maxLength={50}
           />
-          
+
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setCreateGroupModal(false)}>
               Cancel
@@ -354,6 +418,35 @@ export const SettingsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Reset Database Confirmation */}
+      <AlertDialog open={resetConfirm} onOpenChange={setResetConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Database?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>All activity logs</li>
+                <li>All groups</li>
+                <li>All group memberships</li>
+                <li>All user profiles (except yours)</li>
+              </ul>
+              <p className="mt-3 font-semibold text-destructive">This action cannot be undone!</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resetting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetDatabase}
+              disabled={resetting}
+              className="bg-destructive text-destructive-foreground"
+            >
+              {resetting ? "Resetting..." : "Reset Database"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

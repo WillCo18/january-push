@@ -29,10 +29,15 @@ export const SetNicknamePage = ({ onComplete }: SetNicknamePageProps) => {
     setLoading(true);
 
     try {
+      // Use upsert to create profile if it doesn't exist
       const { error } = await supabase
         .from("profiles")
-        .update({ nickname: trimmedNickname })
-        .eq("id", user?.id);
+        .upsert({
+          id: user?.id,
+          nickname: trimmedNickname,
+        }, {
+          onConflict: "id"
+        });
 
       if (error) throw error;
 
