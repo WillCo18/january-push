@@ -175,6 +175,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_group_member_ids: { Args: never; Returns: string[] }
+      current_user_group_ids: { Args: never; Returns: string[] }
       generate_invite_code: { Args: never; Returns: string }
     }
     Enums: {
