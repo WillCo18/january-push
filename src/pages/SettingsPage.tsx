@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Copy, RefreshCw, Eye, UserMinus, Plus, LogOut, Loader2, Check } from "lucide-react";
+import { ArrowLeft, Copy, RefreshCw, Eye, UserMinus, Plus, LogOut, Loader2, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,6 +67,15 @@ export const SettingsPage = () => {
     } catch {
       toast.error("Failed to copy link");
     }
+  };
+
+  const handleEmailInvite = (inviteCode: string, groupName: string) => {
+    const link = `${window.location.origin}/join/${inviteCode}`;
+    const subject = encodeURIComponent(`Join ${groupName} - January 100 Challenge!`);
+    const body = encodeURIComponent(
+      `Hey! I'd like to invite you to join my group "${groupName}" for the January 100 Challenge (100 press-ups every day in January).\n\nClick the link below to join:\n\n${link}\n\nLet's do this together!`
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   const handleRegenerateLink = async (groupId: string) => {
@@ -157,32 +166,43 @@ export const SettingsPage = () => {
                     <h3 className="font-semibold text-foreground mb-3">{group.name}</h3>
                     
                     {/* Invite Link */}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCopyLink(group.inviteCode)}
-                        className="flex-1"
-                      >
-                        {copiedCode === group.inviteCode ? (
-                          <>
-                            <Check className="h-4 w-4 mr-2" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-4 w-4 mr-2" />
-                            Copy invite link
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRegenerateLink(group.id)}
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopyLink(group.inviteCode)}
+                          className="flex-1"
+                        >
+                          {copiedCode === group.inviteCode ? (
+                            <>
+                              <Check className="h-4 w-4 mr-2" />
+                              Copied!
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Copy link
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEmailInvite(group.inviteCode, group.name)}
+                          className="flex-1"
+                        >
+                          <Mail className="h-4 w-4 mr-2" />
+                          Email link
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRegenerateLink(group.id)}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
 

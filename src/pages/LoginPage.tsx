@@ -2,48 +2,78 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Check, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
+const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
 
 export const LoginPage = () => {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<"login" | "signup">("login");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     // Validate email
-    const validation = emailSchema.safeParse(email);
-    if (!validation.success) {
-      setError(validation.error.errors[0].message);
+    const emailValidation = emailSchema.safeParse(email);
+    if (!emailValidation.success) {
+      setError(emailValidation.error.errors[0].message);
+      return;
+    }
+
+    // Validate password
+    const passwordValidation = passwordSchema.safeParse(password);
+    if (!passwordValidation.success) {
+      setError(passwordValidation.error.errors[0].message);
+      return;
+    }
+
+    // For signup, check password confirmation
+    if (mode === "signup" && password !== confirmPassword) {
+      setError("Passwords do not match");
       return;
     }
 
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: validation.data,
-        options: {
-          emailRedirectTo: window.location.origin,
-        },
-      });
+      if (mode === "signup") {
+        // Sign up new user
+        const { error } = await supabase.auth.signUp({
+          email: emailValidation.data,
+          password: passwordValidation.data,
+        });
 
-      if (error) {
-        throw error;
+        if (error) throw error;
+
+        toast.success("Account created! You're now logged in.");
+      } else {
+        // Log in existing user
+        const { error } = await supabase.auth.signInWithPassword({
+          email: emailValidation.data,
+          password: passwordValidation.data,
+        });
+
+        if (error) throw error;
+
+        toast.success("Welcome back!");
       }
-
-      setSent(true);
-      toast.success("Magic link sent!");
     } catch (err: any) {
-      console.error("Login error:", err);
-      setError(err.message || "Failed to send magic link. Please try again.");
+      console.error("Auth error:", err);
+      if (err.message.includes("Invalid login credentials")) {
+        setError("Invalid email or password");
+      } else if (err.message.includes("Email not confirmed")) {
+        setError("Please check your email to confirm your account");
+      } else {
+        setError(err.message || `Failed to ${mode === "login" ? "log in" : "sign up"}. Please try again.`);
+      }
     } finally {
       setLoading(false);
     }
@@ -62,70 +92,113 @@ export const LoginPage = () => {
           </p>
         </div>
 
-        {/* Login Form */}
-        {!sent ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Login/Signup Toggle */}
+        <div className="flex gap-2 mb-6 bg-muted p-1 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setMode("login")}
+            className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+              mode === "login"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Log In
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("signup")}
+            className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+              mode === "signup"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Sign Up
+          </button>
+        </div>
+
+        {/* Login/Signup Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Email Field */}
+          <div>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-12 h-14 text-base rounded-xl bg-card border-border"
+                disabled={loading}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Password Field */}
+          <div>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-12 h-14 text-base rounded-xl bg-card border-border"
+                disabled={loading}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Confirm Password Field (only for signup) */}
+          {mode === "signup" && (
             <div>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="pl-12 h-14 text-base rounded-xl bg-card border-border"
                   disabled={loading}
+                  required
                 />
               </div>
-              {error && (
-                <p className="text-sm text-destructive mt-2">{error}</p>
-              )}
             </div>
+          )}
 
-            <Button
-              type="submit"
-              size="xl"
-              className="w-full"
-              disabled={loading || !email}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  Sending...
-                </>
-              ) : (
-                "Send magic link"
-              )}
-            </Button>
-          </form>
-        ) : (
-          <div className="text-center animate-fade-in">
-            <div className="mx-auto w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mb-6">
-              <Check className="h-8 w-8 text-success" />
-            </div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">
-              Check your email
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              We've sent a magic link to<br />
-              <span className="font-medium text-foreground">{email}</span>
-            </p>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setSent(false);
-                setEmail("");
-              }}
-              className="text-muted-foreground"
-            >
-              Use a different email
-            </Button>
-          </div>
-        )}
+          {/* Error Message */}
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            size="xl"
+            className="w-full"
+            disabled={loading || !email || !password || (mode === "signup" && !confirmPassword)}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                {mode === "login" ? "Logging in..." : "Creating account..."}
+              </>
+            ) : (
+              mode === "login" ? "Log In" : "Sign Up"
+            )}
+          </Button>
+        </form>
 
         {/* Footer */}
         <p className="text-center text-sm text-muted-foreground mt-10">
-          No password needed. We'll email you a secure link to sign in.
+          {mode === "signup"
+            ? "Password must be at least 6 characters"
+            : "Enter your email and password to continue"
+          }
         </p>
       </div>
     </div>

@@ -5,7 +5,7 @@ import { useGroups } from "@/hooks/useGroups";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Check, ArrowLeft, Loader2 } from "lucide-react";
+import { Copy, Check, ArrowLeft, Loader2, Mail } from "lucide-react";
 
 type Step = "choice" | "create" | "success" | "join";
 
@@ -107,6 +107,14 @@ export const GroupOnboardingPage = ({ onComplete }: GroupOnboardingPageProps) =>
     } catch {
       toast.error("Failed to copy link");
     }
+  };
+
+  const handleEmailInvite = () => {
+    const subject = encodeURIComponent("Join my January 100 Challenge group!");
+    const body = encodeURIComponent(
+      `Hey! I've created a group for the January 100 Challenge (100 press-ups every day in January).\n\nClick the link below to join:\n\n${inviteLink}\n\nLet's do this together!`
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   if (step === "choice") {
@@ -232,24 +240,35 @@ export const GroupOnboardingPage = ({ onComplete }: GroupOnboardingPageProps) =>
         
         <div className="bg-muted rounded-lg p-4 space-y-3">
           <p className="text-sm text-foreground break-all font-mono">{inviteLink}</p>
-          
-          <Button
-            onClick={handleCopyLink}
-            variant="outline"
-            className="w-full h-10"
-          >
-            {copied ? (
-              <>
-                <Check className="h-4 w-4 mr-2" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <Copy className="h-4 w-4 mr-2" />
-                Copy link
-              </>
-            )}
-          </Button>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={handleCopyLink}
+              variant="outline"
+              className="h-10"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </>
+              )}
+            </Button>
+
+            <Button
+              onClick={handleEmailInvite}
+              variant="outline"
+              className="h-10"
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Email
+            </Button>
+          </div>
         </div>
         
         <Button
