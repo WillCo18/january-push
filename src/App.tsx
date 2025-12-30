@@ -132,7 +132,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     if (!authLoading) {
       checkProfile();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, hasNickname]);
 
   if (authLoading || checkingProfile) {
     return (
