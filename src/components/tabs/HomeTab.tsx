@@ -3,11 +3,26 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { AddRepsSheet } from "@/components/AddRepsSheet";
 import { GroupProgressGrid } from "@/components/GroupProgressGrid";
 import { Button } from "@/components/ui/button";
-import { Plus, Check } from "lucide-react";
+import { Plus, Check, Info } from "lucide-react";
 import { useActivityLogs } from "@/hooks/useActivityLogs";
 import { useGroupProgress } from "@/hooks/useGroupProgress";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+
+// Check if today is a practice day (Dec 30 or 31)
+const isPracticeDay = () => {
+  const today = new Date();
+  const month = today.getMonth(); // 0-indexed, so December = 11
+  const day = today.getDate();
+  return month === 11 && (day === 30 || day === 31);
+};
+
+// Check if the challenge has started (January 1st or later)
+const isChallengeStarted = () => {
+  const today = new Date();
+  const month = today.getMonth();
+  return month === 0; // January = 0
+};
 
 export const HomeTab = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -52,6 +67,8 @@ export const HomeTab = () => {
     );
   }
 
+  const showPracticeBanner = isPracticeDay();
+
   return (
     <div className="px-4 pt-safe pb-24">
       {/* Header */}
@@ -59,6 +76,21 @@ export const HomeTab = () => {
         <p className="text-sm text-muted-foreground mb-1">Your group</p>
         <h1 className="text-2xl font-semibold text-foreground">{groupName || "January 100"}</h1>
       </header>
+
+      {/* Practice Days Banner */}
+      {showPracticeBanner && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-amber-800 dark:text-amber-300">Practice Days</p>
+              <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                The challenge officially starts on January 1st. Use these days to familiarise yourself with the app and get warmed up!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Personal Stats Card */}
       <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50 mb-6">
