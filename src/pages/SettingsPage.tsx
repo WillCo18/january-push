@@ -317,53 +317,58 @@ export const SettingsPage = () => {
           </Button>
         )}
 
-        {/* Generate Test Data */}
-        <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800">
-          <p className="text-sm text-muted-foreground mb-3">
-            <strong className="text-blue-600 dark:text-blue-400">Testing:</strong> Generate 4 days of random activity for your account
-          </p>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={async () => {
-              if (!user) return;
-              try {
-                for (let i = 0; i < 4; i++) {
-                  const date = new Date();
-                  date.setDate(date.getDate() - i);
-                  const dateStr = date.toISOString().split('T')[0];
-                  const reps = Math.floor(Math.random() * 71) + 50;
+        {/* Admin-only sections - only show if user is admin of at least one group */}
+        {groups.length > 0 && (
+          <>
+            {/* Generate Test Data */}
+            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-muted-foreground mb-3">
+                <strong className="text-blue-600 dark:text-blue-400">Testing:</strong> Generate 4 days of random activity for your account
+              </p>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={async () => {
+                  if (!user) return;
+                  try {
+                    for (let i = 0; i < 4; i++) {
+                      const date = new Date();
+                      date.setDate(date.getDate() - i);
+                      const dateStr = date.toISOString().split('T')[0];
+                      const reps = Math.floor(Math.random() * 71) + 50;
 
-                  await supabase.from('activity_logs').insert({
-                    user_id: user.id,
-                    log_date: dateStr,
-                    reps: reps
-                  });
-                }
-                toast.success('Test data generated!');
-                refetch();
-              } catch (err: any) {
-                toast.error('Failed to generate test data');
-              }
-            }}
-          >
-            Generate Test Activity Data
-          </Button>
-        </div>
+                      await supabase.from('activity_logs').insert({
+                        user_id: user.id,
+                        log_date: dateStr,
+                        reps: reps
+                      });
+                    }
+                    toast.success('Test data generated!');
+                    refetch();
+                  } catch (err: any) {
+                    toast.error('Failed to generate test data');
+                  }
+                }}
+              >
+                Generate Test Activity Data
+              </Button>
+            </div>
 
-        {/* Reset Database (Admin Only) */}
-        <div className="mb-4 p-4 bg-destructive/10 rounded-xl border border-destructive/20">
-          <p className="text-sm text-muted-foreground mb-3">
-            <strong className="text-destructive">Danger Zone:</strong> Clear all data (profiles, groups, activity). Note: Cannot delete auth users from here - do that manually in Supabase.
-          </p>
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={() => setResetConfirm(true)}
-          >
-            Reset Database
-          </Button>
-        </div>
+            {/* Reset Database (Admin Only) */}
+            <div className="mb-4 p-4 bg-destructive/10 rounded-xl border border-destructive/20">
+              <p className="text-sm text-muted-foreground mb-3">
+                <strong className="text-destructive">Danger Zone:</strong> Clear all data (profiles, groups, activity). Note: Cannot delete auth users from here - do that manually in Supabase.
+              </p>
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={() => setResetConfirm(true)}
+              >
+                Reset Database
+              </Button>
+            </div>
+          </>
+        )}
 
         {/* Logout */}
         <Button
