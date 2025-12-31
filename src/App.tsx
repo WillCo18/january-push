@@ -103,21 +103,24 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
         // Only process invites and check group if nickname exists
         if (nicknameExists) {
-          // Try to process any pending invite code
-          const joinedViaInvite = await processPendingInvite();
-          
-          if (joinedViaInvite) {
-            setHasGroup(true);
-          } else {
-            // Check existing group membership
-            const { data: membership, error: memberError } = await supabase
-              .from("group_memberships")
-              .select("group_id")
-              .eq("user_id", user.id)
-              .maybeSingle();
+          // Check existing group membership first
+          const { data: membership, error: memberError } = await supabase
+            .from("group_memberships")
+            .select("group_id")
+            .eq("user_id", user.id)
+            .maybeSingle();
 
-            if (memberError) throw memberError;
-            setHasGroup(!!membership);
+          if (memberError) throw memberError;
+          
+          if (membership) {
+            // User already has a group
+            setHasGroup(true);
+            // Clear any pending invite code since they're already in a group
+            getAndClearInviteCode();
+          } else {
+            // No group - try to process any pending invite code
+            const joinedViaInvite = await processPendingInvite();
+            setHasGroup(joinedViaInvite);
           }
         }
       } catch (err) {
