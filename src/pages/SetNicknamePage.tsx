@@ -45,6 +45,12 @@ export const SetNicknamePage = ({ onComplete }: SetNicknamePageProps) => {
       onComplete();
     } catch (err: any) {
       console.error("Error saving nickname:", err);
+      // If foreign key constraint fails, the auth user doesn't exist - sign out
+      if (err?.code === '23503' || err?.message?.includes('foreign key')) {
+        toast.error("Session expired. Please sign in again.");
+        await supabase.auth.signOut();
+        return;
+      }
       setError(err.message || "Failed to save nickname. Please try again.");
     } finally {
       setLoading(false);
