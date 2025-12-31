@@ -7,7 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
-const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
+const passwordSchema = z.string().min(8, { message: "Password must be at least 8 characters" });
 
 const INVITE_CODE_KEY = "pending_invite_code";
 
@@ -23,7 +23,8 @@ export const LoginPage = () => {
 
   // Check for pending invite code on mount
   useEffect(() => {
-    const inviteCode = localStorage.getItem(INVITE_CODE_KEY);
+    // Use sessionStorage instead of localStorage for better security
+    const inviteCode = sessionStorage.getItem(INVITE_CODE_KEY);
     if (inviteCode) {
       setHasInvite(true);
       setMode("signup"); // Automatically switch to signup mode
@@ -226,7 +227,7 @@ export const LoginPage = () => {
         {/* Footer */}
         <p className="text-center text-sm text-muted-foreground mt-10">
           {mode === "signup"
-            ? "Password must be at least 6 characters"
+            ? "Password must be at least 8 characters"
             : "Enter your email and password to continue"
           }
         </p>

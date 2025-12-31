@@ -8,12 +8,14 @@ import { toast } from "sonner";
 const INVITE_CODE_KEY = "pending_invite_code";
 
 export const saveInviteCode = (code: string) => {
-  localStorage.setItem(INVITE_CODE_KEY, code);
+  // Use sessionStorage instead of localStorage for better security
+  // sessionStorage is cleared when the tab is closed, reducing XSS risk
+  sessionStorage.setItem(INVITE_CODE_KEY, code);
 };
 
 export const getAndClearInviteCode = () => {
-  const code = localStorage.getItem(INVITE_CODE_KEY);
-  localStorage.removeItem(INVITE_CODE_KEY);
+  const code = sessionStorage.getItem(INVITE_CODE_KEY);
+  sessionStorage.removeItem(INVITE_CODE_KEY);
   return code;
 };
 
