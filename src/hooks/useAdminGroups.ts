@@ -82,11 +82,11 @@ export const useAdminGroups = () => {
   }, [fetchAdminGroups]);
 
   const regenerateInviteCode = async (groupId: string) => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let newCode = "";
-    for (let i = 0; i < 8; i++) {
-      newCode += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    // Use RPC to generate unique invite code server-side
+    const { data: newCode, error: rpcError } = await supabase
+      .rpc('generate_unique_invite_code');
+
+    if (rpcError) throw rpcError;
 
     const { error } = await supabase
       .from("groups")

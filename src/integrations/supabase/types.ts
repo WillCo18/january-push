@@ -129,7 +129,7 @@ export type Database = {
           admin_id: string
           created_at?: string
           id?: string
-          invite_code: string
+          invite_code?: string
           name: string
         }
         Update: {
@@ -178,6 +178,7 @@ export type Database = {
       current_group_member_ids: { Args: never; Returns: string[] }
       current_user_group_ids: { Args: never; Returns: string[] }
       generate_invite_code: { Args: never; Returns: string }
+      generate_unique_invite_code: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

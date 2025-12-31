@@ -64,7 +64,12 @@ export const useActivityLogs = () => {
   }, [fetchTodayReps, fetchGroupName]);
 
   const addReps = async (reps: number, logDate?: string) => {
+    // Validate reps - must be between 1 and 1000
     if (!user || reps <= 0) return;
+    if (reps > 1000) {
+      console.error("Reps cannot exceed 1000 per entry");
+      return false;
+    }
 
     const dateToLog = logDate || today;
 
