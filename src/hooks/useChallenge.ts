@@ -27,31 +27,22 @@ export const useChallenge = () => {
   const currentMonth = today.getMonth();
   const isJanuary = currentMonth === 0;
 
-  // Initialize user logs from localStorage or empty
-  const [userLogs, setUserLogs] = useState<DayLog[]>(() => {
-    const saved = localStorage.getItem("january100-logs");
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    // Start with empty logs - user must log their own data
-    return [];
-  });
+  // User logs will be populated from database via useActivityLogs hook
+  // This hook now only provides structure - actual data comes from database
+  const [userLogs, setUserLogs] = useState<DayLog[]>([]);
 
   const [friends] = useState<Friend[]>(generateMockFriends);
 
+  // Save log - this is now a no-op as logging is handled by useActivityLogs
+  // Kept for interface compatibility
   const saveLog = useCallback((day: number, count: number) => {
     setUserLogs(prev => {
       const existing = prev.findIndex(l => l.day === day);
-      let updated: DayLog[];
-      
       if (existing >= 0) {
-        updated = prev.map(l => l.day === day ? { ...l, count } : l);
+        return prev.map(l => l.day === day ? { ...l, count } : l);
       } else {
-        updated = [...prev, { day, count }];
+        return [...prev, { day, count }];
       }
-      
-      localStorage.setItem("january100-logs", JSON.stringify(updated));
-      return updated;
     });
   }, []);
 

@@ -21,7 +21,7 @@ export const CalendarTab = ({ challenge }: CalendarTabProps) => {
   } = challenge;
 
   // Generate calendar days with padding for proper alignment
-  const firstDayOfMonth = new Date(2025, 0, 1).getDay(); // 0 = Sunday, etc.
+  const firstDayOfMonth = new Date(2026, 0, 1).getDay(); // 0 = Sunday, etc.
   const paddingDays = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; // Adjust for Monday start
   
   const days = Array.from({ length: totalDays }, (_, i) => i + 1);
@@ -44,7 +44,7 @@ export const CalendarTab = ({ challenge }: CalendarTabProps) => {
       {/* Header */}
       <header className="pt-6 pb-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">January 2025</h1>
+          <h1 className="text-2xl font-bold text-foreground">January 2026</h1>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
           {completedDays} days complete · {totalCount.toLocaleString()} total
