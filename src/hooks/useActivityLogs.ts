@@ -63,6 +63,33 @@ export const useActivityLogs = () => {
     fetchGroupName();
   }, [fetchTodayReps, fetchGroupName]);
 
+  // Real-time subscription for activity_logs changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('activity-logs-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'activity_logs',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Activity log change:', payload);
+          // Refetch to ensure accurate totals
+          fetchTodayReps();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchTodayReps]);
+
   const addReps = async (reps: number, logDate?: string) => {
     // Validate reps - must be between 1 and 1000
     if (!user || reps <= 0) return;
