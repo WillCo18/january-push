@@ -13,6 +13,7 @@ import { GroupOnboardingPage } from "./pages/GroupOnboardingPage";
 import { JoinGroupPage, getAndClearInviteCode } from "./pages/JoinGroupPage";
 import { JourneyPage } from "./pages/JourneyPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { WelcomeScreen } from "./components/WelcomeScreen";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,12 +26,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [hasNickname, setHasNickname] = useState(false);
   const [hasGroup, setHasGroup] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [welcomeGroupName, setWelcomeGroupName] = useState("");
 
-  const processPendingInvite = async () => {
-    if (!user) return false;
+  const processPendingInvite = async (): Promise<{ joined: boolean; groupName?: string }> => {
+    if (!user) return { joined: false };
     
     const pendingCode = getAndClearInviteCode();
-    if (!pendingCode) return false;
+    if (!pendingCode) return { joined: false };
 
     try {
       // Check if user already has a group
@@ -42,7 +45,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
       if (existingMembership) {
         toast.error("You're already in a group");
-        return true;
+        return { joined: true };
       }
 
       // Find the group
@@ -54,7 +57,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
       if (groupError || !group) {
         toast.error("Invalid invite link");
-        return false;
+        return { joined: false };
       }
 
       // Join the group
@@ -71,14 +74,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         } else {
           toast.error("Failed to join group");
         }
-        return false;
+        return { joined: false };
       }
 
-      toast.success(`Joined "${group.name}"!`);
-      return true;
+      return { joined: true, groupName: group.name };
     } catch (err) {
       console.error("Error processing invite:", err);
-      return false;
+      return { joined: false };
     }
   };
 
@@ -119,8 +121,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
             getAndClearInviteCode();
           } else {
             // No group - try to process any pending invite code
-            const joinedViaInvite = await processPendingInvite();
-            setHasGroup(joinedViaInvite);
+            const result = await processPendingInvite();
+            if (result.joined && result.groupName) {
+              setWelcomeGroupName(result.groupName);
+              setShowWelcome(true);
+            }
+            setHasGroup(result.joined);
           }
         }
       } catch (err) {
@@ -155,6 +161,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!hasGroup) {
     return <GroupOnboardingPage onComplete={() => setHasGroup(true)} />;
+  }
+
+  if (showWelcome) {
+    return (
+      <WelcomeScreen 
+        groupName={welcomeGroupName} 
+        onContinue={() => setShowWelcome(false)} 
+      />
+    );
   }
 
   return <>{children}</>;
