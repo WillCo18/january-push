@@ -129,8 +129,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
             setHasGroup(result.joined);
           }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error checking profile:", err);
+        // If there's a foreign key or auth error, the session is stale - sign out
+        if (err?.code === '23503' || err?.message?.includes('foreign key')) {
+          console.log("Stale session detected, signing out");
+          await supabase.auth.signOut();
+          return;
+        }
         setHasNickname(false);
         setHasGroup(false);
       } finally {
