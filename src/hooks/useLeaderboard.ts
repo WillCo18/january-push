@@ -148,6 +148,32 @@ export const useLeaderboard = () => {
     fetchLeaderboard();
   }, [fetchLeaderboard]);
 
+  // Real-time subscription for daily_summary changes (group member updates)
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('leaderboard-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'daily_summary',
+        },
+        (payload) => {
+          console.log('Daily summary change:', payload);
+          // Refetch leaderboard when any daily_summary changes
+          fetchLeaderboard();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchLeaderboard]);
+
   return {
     members,
     groupName,
