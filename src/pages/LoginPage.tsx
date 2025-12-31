@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, Users } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
+
+const INVITE_CODE_KEY = "pending_invite_code";
 
 export const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -15,7 +17,18 @@ export const LoginPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasInvite, setHasInvite] = useState(false);
+  // Default to signup if there's an invite code
   const [mode, setMode] = useState<"login" | "signup">("login");
+
+  // Check for pending invite code on mount
+  useEffect(() => {
+    const inviteCode = localStorage.getItem(INVITE_CODE_KEY);
+    if (inviteCode) {
+      setHasInvite(true);
+      setMode("signup"); // Automatically switch to signup mode
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +104,23 @@ export const LoginPage = () => {
             100 press-ups. Every day. All January.
           </p>
         </div>
+
+        {/* Invite Banner */}
+        {hasInvite && (
+          <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-xl">
+            <div className="flex items-start gap-3">
+              <Users className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-foreground mb-1">
+                  You've been invited to join a group!
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Create your account below to join your friends in the January 100 Challenge.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Login/Signup Toggle */}
         <div className="flex gap-2 mb-6 bg-muted p-1 rounded-xl">
