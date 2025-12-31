@@ -15,26 +15,10 @@ interface Friend {
 const DAILY_TARGET = 100;
 const JANUARY_DAYS = 31;
 
-// Generate mock data for demo
+// No mock data - friends will be loaded from database
 const generateMockFriends = (): Friend[] => {
-  const names = [
-    { name: "Alex Johnson", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=alex" },
-    { name: "Sam Williams", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sam" },
-    { name: "Jordan Lee", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=jordan" },
-    { name: "Casey Brown", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=casey" },
-  ];
-
-  const currentDay = new Date().getDate();
-
-  return names.map((person, idx) => ({
-    id: `friend-${idx}`,
-    name: person.name,
-    avatar: person.avatar,
-    logs: Array.from({ length: currentDay - 1 }, (_, i) => ({
-      day: i + 1,
-      count: Math.floor(Math.random() * 40) + 80, // Random between 80-120
-    })),
-  }));
+  // Return empty array - real friends will come from the database
+  return [];
 };
 
 export const useChallenge = () => {
@@ -49,11 +33,8 @@ export const useChallenge = () => {
     if (saved) {
       return JSON.parse(saved);
     }
-    // Generate some demo data
-    return Array.from({ length: Math.max(0, currentDay - 1) }, (_, i) => ({
-      day: i + 1,
-      count: Math.floor(Math.random() * 30) + 85,
-    }));
+    // Start with empty logs - user must log their own data
+    return [];
   });
 
   const [friends] = useState<Friend[]>(generateMockFriends);
