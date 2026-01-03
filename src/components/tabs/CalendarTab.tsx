@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { DayCell } from "@/components/DayCell";
-import { LogPressUpsSheet } from "@/components/LogPressUpsSheet";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { AddRepsSheet } from "@/components/AddRepsSheet";
+import { useActivityLogs } from "@/hooks/useActivityLogs";
+import { format } from "date-fns";
 
 interface CalendarTabProps {
   challenge: ReturnType<typeof import("@/hooks/useChallenge").useChallenge>;
@@ -9,13 +10,13 @@ interface CalendarTabProps {
 
 export const CalendarTab = ({ challenge }: CalendarTabProps) => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const { addReps } = useActivityLogs();
   
   const { 
     currentDay, 
     dailyTarget, 
     totalDays, 
-    getLogForDay, 
-    saveLog,
+    getLogForDay,
     completedDays,
     totalCount
   } = challenge;
@@ -33,10 +34,14 @@ export const CalendarTab = ({ challenge }: CalendarTabProps) => {
     }
   };
 
-  const handleSaveLog = (count: number) => {
+  const handleAddReps = async (reps: number, date?: string) => {
     if (selectedDay !== null) {
-      saveLog(selectedDay, count);
+      // Use provided date or format the selected day as a date string for January 2026
+      const logDate = date || format(new Date(2026, 0, selectedDay), "yyyy-MM-dd");
+      const success = await addReps(reps, logDate);
+      return success;
     }
+    return false;
   };
 
   return (
@@ -103,16 +108,12 @@ export const CalendarTab = ({ challenge }: CalendarTabProps) => {
         </div>
       </div>
 
-      {/* Log Sheet for selected day */}
-      {selectedDay !== null && (
-        <LogPressUpsSheet
-          isOpen={selectedDay !== null}
-          onClose={() => setSelectedDay(null)}
-          onSave={handleSaveLog}
-          currentCount={getLogForDay(selectedDay)}
-          target={dailyTarget}
-        />
-      )}
+      {/* Add Reps Sheet for selected day */}
+      <AddRepsSheet
+        isOpen={selectedDay !== null}
+        onClose={() => setSelectedDay(null)}
+        onAdd={handleAddReps}
+      />
     </div>
   );
 };
