@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Copy, RefreshCw, Eye, UserMinus, Plus, LogOut, Loader2, Check, Mail } from "lucide-react";
+import { ArrowLeft, Copy, RefreshCw, Eye, UserMinus, Plus, LogOut, Loader2, Check, Mail, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,7 +38,7 @@ interface ActivityLog {
 export const SettingsPage = () => {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
-  const { groups, loading, regenerateInviteCode, removeMember, getMemberLogs, canCreateGroup, refetch } = useAdminGroups();
+  const { groups, loading, regenerateInviteCode, removeMember, getMemberLogs, updateGroupName, canCreateGroup, refetch } = useAdminGroups();
   const { createGroup } = useGroups();
 
   const [viewLogsModal, setViewLogsModal] = useState<{ open: boolean; nickname: string; logs: ActivityLog[] }>({
@@ -58,6 +58,32 @@ export const SettingsPage = () => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [editGroupModal, setEditGroupModal] = useState<{ open: boolean; groupId: string; currentName: string }>({
+    open: false,
+    groupId: "",
+    currentName: "",
+  });
+  const [editedGroupName, setEditedGroupName] = useState("");
+  const [updating, setUpdating] = useState(false);
+
+  const handleUpdateGroupName = async () => {
+    if (editedGroupName.trim().length < 2) {
+      toast.error("Group name must be at least 2 characters");
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      await updateGroupName(editGroupModal.groupId, editedGroupName.trim());
+      toast.success("Group name updated!");
+      setEditGroupModal({ open: false, groupId: "", currentName: "" });
+      setEditedGroupName("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update group name");
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const handleCopyLink = async (inviteCode: string) => {
     const link = `${window.location.origin}/join/${inviteCode}`;
@@ -213,7 +239,19 @@ export const SettingsPage = () => {
                 <div key={group.id} className="bg-card rounded-xl border border-border/50 overflow-hidden">
                   {/* Group Header */}
                   <div className="p-4 border-b border-border/50">
-                    <h3 className="font-semibold text-foreground mb-3">{group.name}</h3>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-foreground">{group.name}</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditGroupModal({ open: true, groupId: group.id, currentName: group.name });
+                          setEditedGroupName(group.name);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </div>
                     
                     {/* Invite Link */}
                     <div className="space-y-2">
@@ -453,6 +491,37 @@ export const SettingsPage = () => {
               className="bg-[#00A699] hover:bg-[#00A699]/90 text-white"
             >
               {creating ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Group Name Modal */}
+      <Dialog open={editGroupModal.open} onOpenChange={(open) => !open && setEditGroupModal({ open: false, groupId: "", currentName: "" })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit group name</DialogTitle>
+            <DialogDescription>Update your group's name</DialogDescription>
+          </DialogHeader>
+
+          <Input
+            value={editedGroupName}
+            onChange={(e) => setEditedGroupName(e.target.value)}
+            placeholder="Group name"
+            className="mt-4"
+            maxLength={50}
+          />
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setEditGroupModal({ open: false, groupId: "", currentName: "" })}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateGroupName}
+              disabled={updating || editedGroupName.trim().length < 2}
+              className="bg-[#00A699] hover:bg-[#00A699]/90 text-white"
+            >
+              {updating ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -132,6 +132,19 @@ export const useAdminGroups = () => {
     return data || [];
   };
 
+  const updateGroupName = async (groupId: string, newName: string) => {
+    const { error } = await supabase
+      .from("groups")
+      .update({ name: newName })
+      .eq("id", groupId);
+
+    if (error) throw error;
+
+    setGroups(prev =>
+      prev.map(g => (g.id === groupId ? { ...g, name: newName } : g))
+    );
+  };
+
   return {
     groups,
     loading,
@@ -139,6 +152,7 @@ export const useAdminGroups = () => {
     regenerateInviteCode,
     removeMember,
     getMemberLogs,
+    updateGroupName,
     canCreateGroup: groups.length < 3,
   };
 };
