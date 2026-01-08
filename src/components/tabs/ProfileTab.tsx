@@ -1,6 +1,8 @@
+import { useRef } from "react";
 import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
-import { Settings, Award, Target, Flame, Calendar, TrendingUp } from "lucide-react";
+import { Settings, Award, Target, Flame, Calendar, TrendingUp, Camera, Loader2 } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
 
 interface ProfileTabProps {
   challenge: ReturnType<typeof import("@/hooks/useChallenge").useChallenge>;
@@ -17,13 +19,43 @@ export const ProfileTab = ({ challenge }: ProfileTabProps) => {
     leaderboard
   } = challenge;
 
+  const { profile, uploading, uploadAvatar } = useProfile();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const userRank = leaderboard.findIndex(p => p.isCurrentUser) + 1;
   const averagePerDay = currentDay > 0 ? Math.round(totalCount / currentDay) : 0;
-  const projectedTotal = averagePerDay * totalDays;
   const completionRate = currentDay > 0 ? Math.round((completedDays / currentDay) * 100) : 0;
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await uploadAvatar(file);
+    }
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.nickname || "you"}`;
+  const displayName = profile?.nickname || "You";
 
   return (
     <div className="px-4 pt-safe pb-8">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       {/* Header */}
       <header className="pt-6 pb-4 flex items-center justify-between">
         <div>
@@ -38,15 +70,28 @@ export const ProfileTab = ({ challenge }: ProfileTabProps) => {
       {/* Profile Card */}
       <div className="bg-card rounded-2xl p-6 shadow-card mb-6">
         <div className="flex items-center gap-4 mb-6">
-          <div className="h-16 w-16 rounded-full bg-primary/10 overflow-hidden">
+          {/* Avatar with upload button */}
+          <button
+            onClick={handleAvatarClick}
+            disabled={uploading}
+            className="relative h-16 w-16 rounded-full bg-primary/10 overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          >
             <img 
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=you" 
+              src={avatarUrl} 
               alt="Your avatar"
               className="h-full w-full object-cover"
             />
-          </div>
+            {/* Overlay on hover/tap */}
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity">
+              {uploading ? (
+                <Loader2 className="h-5 w-5 text-white animate-spin" />
+              ) : (
+                <Camera className="h-5 w-5 text-white" />
+              )}
+            </div>
+          </button>
           <div>
-            <h2 className="text-xl font-bold text-foreground">You</h2>
+            <h2 className="text-xl font-bold text-foreground">{displayName}</h2>
             <p className="text-muted-foreground">Rank #{userRank} of {leaderboard.length}</p>
           </div>
         </div>
