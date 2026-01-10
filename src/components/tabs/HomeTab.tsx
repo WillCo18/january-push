@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ProgressRing } from "@/components/ProgressRing";
 import { AddRepsSheet } from "@/components/AddRepsSheet";
 import { GroupProgressGrid } from "@/components/GroupProgressGrid";
@@ -28,7 +28,9 @@ const isChallengeStarted = () => {
 export const HomeTab = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
+  const [celebrationStreak, setCelebrationStreak] = useState(10);
   const STREAK_CELEBRATION_KEY = "streak_10_celebrated";
+  
   const {
     todayReps,
     loading: activityLoading,
@@ -47,20 +49,44 @@ export const HomeTab = () => {
     refetch: refetchGroup,
   } = useGroupProgress();
 
-  const { currentStreak } = useChallenge();
+  const { currentStreak, userLogs } = useChallenge();
 
   const loading = activityLoading || groupLoading;
 
-  // Check for 10-day streak celebration
-  useEffect(() => {
-    if (currentStreak >= 10) {
-      const hasCelebrated = localStorage.getItem(STREAK_CELEBRATION_KEY);
-      if (!hasCelebrated) {
-        setShowStreakCelebration(true);
-        localStorage.setItem(STREAK_CELEBRATION_KEY, "true");
+  // Calculate what streak will be when today is complete
+  const getStreakIfTodayCompleted = useCallback(() => {
+    const today = new Date();
+    const todayDay = today.getDate();
+    
+    // Count consecutive completed days ending yesterday
+    let yesterdayStreak = 0;
+    for (let day = todayDay - 1; day >= 1; day--) {
+      const log = userLogs.find(l => l.day === day);
+      if (log && log.count >= 100) {
+        yesterdayStreak++;
+      } else {
+        break;
       }
     }
-  }, [currentStreak]);
+    
+    // If today would be complete, streak = yesterdayStreak + 1
+    return yesterdayStreak + 1;
+  }, [userLogs]);
+
+  // Check for 10-day streak celebration when today becomes complete
+  useEffect(() => {
+    if (isComplete) {
+      const hasCelebrated = localStorage.getItem(STREAK_CELEBRATION_KEY);
+      if (!hasCelebrated) {
+        const potentialStreak = getStreakIfTodayCompleted();
+        if (potentialStreak >= 10) {
+          setCelebrationStreak(potentialStreak);
+          setShowStreakCelebration(true);
+          localStorage.setItem(STREAK_CELEBRATION_KEY, "true");
+        }
+      }
+    }
+  }, [isComplete, getStreakIfTodayCompleted]);
 
   const handleAddReps = async (reps: number, date?: string) => {
     const success = await addReps(reps, date);
@@ -168,7 +194,7 @@ export const HomeTab = () => {
 
       {/* 10-Day Streak Celebration */}
       <StreakCelebration
-        streak={currentStreak}
+        streak={celebrationStreak}
         isOpen={showStreakCelebration}
         onClose={() => setShowStreakCelebration(false)}
       />
