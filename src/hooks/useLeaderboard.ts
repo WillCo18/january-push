@@ -10,6 +10,7 @@ interface LeaderboardMember {
   todayComplete: boolean;
   streak: number;
   totalCappedReps: number;
+  daysCompleted: number;
   isCurrentUser: boolean;
 }
 
@@ -117,6 +118,7 @@ export const useLeaderboard = () => {
         const todaySummary = userSummaries.find(s => s.log_date === today);
         
         const totalCappedReps = userSummaries.reduce((sum, s) => sum + s.capped_reps, 0);
+        const daysCompleted = userSummaries.filter(s => s.is_complete).length;
         const streak = calculateStreak(userSummaries);
 
         return {
@@ -126,14 +128,15 @@ export const useLeaderboard = () => {
           todayComplete: todaySummary?.is_complete || false,
           streak,
           totalCappedReps,
+          daysCompleted,
           isCurrentUser: profile.id === user.id,
         };
       });
 
-      // Sort: primary by streak (desc), secondary by totalCappedReps (desc)
+      // Sort: primary by days completed (desc), secondary by nickname (alphabetical)
       leaderboardData.sort((a, b) => {
-        if (b.streak !== a.streak) return b.streak - a.streak;
-        return b.totalCappedReps - a.totalCappedReps;
+        if (b.daysCompleted !== a.daysCompleted) return b.daysCompleted - a.daysCompleted;
+        return a.nickname.localeCompare(b.nickname);
       });
 
       setMembers(leaderboardData);
