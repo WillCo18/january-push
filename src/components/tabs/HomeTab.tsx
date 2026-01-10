@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProgressRing } from "@/components/ProgressRing";
 import { AddRepsSheet } from "@/components/AddRepsSheet";
 import { GroupProgressGrid } from "@/components/GroupProgressGrid";
+import { StreakCelebration } from "@/components/StreakCelebration";
 import { Button } from "@/components/ui/button";
-import { Plus, Check, Info } from "lucide-react";
+import { Plus, Check, Info, Loader2 } from "lucide-react";
 import { useActivityLogs } from "@/hooks/useActivityLogs";
 import { useGroupProgress } from "@/hooks/useGroupProgress";
+import { useChallenge } from "@/hooks/useChallenge";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 // Check if today is a practice day (Dec 30 or 31)
 const isPracticeDay = () => {
@@ -26,6 +27,8 @@ const isChallengeStarted = () => {
 
 export const HomeTab = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [showStreakCelebration, setShowStreakCelebration] = useState(false);
+  const STREAK_CELEBRATION_KEY = "streak_10_celebrated";
   const {
     todayReps,
     loading: activityLoading,
@@ -44,7 +47,20 @@ export const HomeTab = () => {
     refetch: refetchGroup,
   } = useGroupProgress();
 
+  const { currentStreak } = useChallenge();
+
   const loading = activityLoading || groupLoading;
+
+  // Check for 10-day streak celebration
+  useEffect(() => {
+    if (currentStreak >= 10) {
+      const hasCelebrated = localStorage.getItem(STREAK_CELEBRATION_KEY);
+      if (!hasCelebrated) {
+        setShowStreakCelebration(true);
+        localStorage.setItem(STREAK_CELEBRATION_KEY, "true");
+      }
+    }
+  }, [currentStreak]);
 
   const handleAddReps = async (reps: number, date?: string) => {
     const success = await addReps(reps, date);
@@ -148,6 +164,13 @@ export const HomeTab = () => {
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
         onAdd={handleAddReps}
+      />
+
+      {/* 10-Day Streak Celebration */}
+      <StreakCelebration
+        streak={currentStreak}
+        isOpen={showStreakCelebration}
+        onClose={() => setShowStreakCelebration(false)}
       />
     </div>
   );
