@@ -48,13 +48,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         return { joined: true };
       }
 
-      // Find the group
-      const { data: group, error: groupError } = await supabase
-        .from("groups")
-        .select("id, name")
-        .eq("invite_code", pendingCode.toUpperCase())
-        .maybeSingle();
+      // Find the group using secure RPC
+      const { data: groups, error: groupError } = await supabase
+        .rpc("lookup_group_by_invite", { p_invite_code: pendingCode.toUpperCase() });
 
+      const group = groups?.[0];
       if (groupError || !group) {
         toast.error("Invalid invite link");
         return { joined: false };

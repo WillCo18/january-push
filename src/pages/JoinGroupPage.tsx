@@ -59,13 +59,11 @@ export const JoinGroupPage = () => {
           return;
         }
 
-        // Find the group by invite code
-        const { data: group, error: groupError } = await supabase
-          .from("groups")
-          .select("id, name")
-          .eq("invite_code", code.toUpperCase())
-          .maybeSingle();
+        // Find the group by invite code using secure RPC
+        const { data: groups, error: groupError } = await supabase
+          .rpc("lookup_group_by_invite", { p_invite_code: code.toUpperCase() });
 
+        const group = groups?.[0];
         if (groupError || !group) {
           toast.error("Invalid invite link");
           navigate("/", { replace: true });

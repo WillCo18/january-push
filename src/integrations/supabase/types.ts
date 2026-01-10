@@ -203,6 +203,13 @@ export type Database = {
       current_user_group_ids: { Args: never; Returns: string[] }
       generate_invite_code: { Args: never; Returns: string }
       generate_unique_invite_code: { Args: never; Returns: string }
+      lookup_group_by_invite: {
+        Args: { p_invite_code: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

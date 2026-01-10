@@ -43,13 +43,11 @@ export const GroupOnboardingPage = ({ onComplete }: GroupOnboardingPageProps) =>
 
     setJoining(true);
     try {
-      // Find the group
-      const { data: group, error: groupError } = await supabase
-        .from("groups")
-        .select("id, name")
-        .eq("invite_code", code)
-        .maybeSingle();
+      // Find the group using secure RPC
+      const { data: groups, error: groupError } = await supabase
+        .rpc("lookup_group_by_invite", { p_invite_code: code });
 
+      const group = groups?.[0];
       if (groupError || !group) {
         toast.error("Invalid invite link");
         return;
