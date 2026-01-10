@@ -29,7 +29,7 @@ export const HomeTab = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
   const [celebrationStreak, setCelebrationStreak] = useState(10);
-  const STREAK_CELEBRATION_KEY = "streak_10_celebrated";
+  const STREAK_CELEBRATION_KEY = "streak_10_celebrated_v2";
   
   const {
     todayReps,
