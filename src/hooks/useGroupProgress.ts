@@ -1,7 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { startOfWeek, endOfWeek, eachDayOfInterval, format } from "date-fns";
+import {
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  format,
+  startOfDay,
+  subDays,
+} from "date-fns";
 
 interface DayProgress {
   date: string;
@@ -13,6 +20,9 @@ interface MemberProgress {
   userId: string;
   nickname: string;
   days: DayProgress[];
+  // Used for ordering; UI can ignore
+  streak: number;
+  daysCompleted: number;
 }
 
 export const useGroupProgress = () => {
@@ -57,13 +67,56 @@ export const useGroupProgress = () => {
         return;
       }
 
-      const memberIds = memberships.map(m => m.user_id);
+      const memberIds = memberships.map((m) => m.user_id);
 
       // Get profiles for all members
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, nickname")
         .in("id", memberIds);
+
+      // Pull daily completion summaries for ordering (streak / days completed)
+      const todayStr = format(new Date(), "yyyy-MM-dd");
+      const januaryStart = format(new Date(new Date().getFullYear(), 0, 1), "yyyy-MM-dd");
+
+      const { data: summaries } = await supabase
+        .from("daily_summary")
+        .select("user_id, log_date, is_complete")
+        .in("user_id", memberIds)
+        .gte("log_date", januaryStart);
+
+      const calculateStreak = (userSummaries: { log_date: string; is_complete: boolean }[]) => {
+        if (!userSummaries.length) return 0;
+
+        // Sort by date descending
+        const sorted = [...userSummaries].sort(
+          (a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime()
+        );
+
+        let streak = 0;
+        const todayDate = startOfDay(new Date());
+        let checkDate = todayDate;
+
+        // If today is not complete, start checking from yesterday
+        const todaySummary = sorted.find((s) => s.log_date === todayStr);
+        if (!todaySummary?.is_complete) {
+          checkDate = subDays(todayDate, 1);
+        }
+
+        // Count consecutive complete days (max 31 days for January)
+        for (let i = 0; i < 31; i++) {
+          const dateStr = format(checkDate, "yyyy-MM-dd");
+          const summary = sorted.find((s) => s.log_date === dateStr);
+          if (summary?.is_complete) {
+            streak++;
+            checkDate = subDays(checkDate, 1);
+          } else {
+            break;
+          }
+        }
+
+        return streak;
+      };
 
       // Get current week dates
       const now = new Date();
@@ -82,12 +135,11 @@ export const useGroupProgress = () => {
         .gte("log_date", startDate)
         .lte("log_date", endDate);
 
-      // Build member progress data
-      const memberProgress: MemberProgress[] = (profiles || []).map(profile => {
-        const days = weekDays.map(day => {
+      const memberProgress: MemberProgress[] = (profiles || []).map((profile) => {
+        const days = weekDays.map((day) => {
           const dateStr = format(day, "yyyy-MM-dd");
           const dayLogs = (logs || []).filter(
-            log => log.user_id === profile.id && log.log_date === dateStr
+            (log) => log.user_id === profile.id && log.log_date === dateStr
           );
           const totalReps = dayLogs.reduce((sum, log) => sum + log.reps, 0);
 
@@ -98,17 +150,25 @@ export const useGroupProgress = () => {
           };
         });
 
+        const userSummaries = (summaries || []).filter((s) => s.user_id === profile.id);
+        const daysCompleted = userSummaries.filter((s) => s.is_complete).length;
+        const streak = calculateStreak(userSummaries);
+
         return {
           userId: profile.id,
           nickname: profile.nickname || "Anonymous",
           days,
+          streak,
+          daysCompleted,
         };
       });
 
-      // Sort: current user first, then by nickname
+      // Sort: current user first, then by streak (desc), then days completed (desc), then nickname
       memberProgress.sort((a, b) => {
         if (a.userId === user.id) return -1;
         if (b.userId === user.id) return 1;
+        if (b.streak !== a.streak) return b.streak - a.streak;
+        if (b.daysCompleted !== a.daysCompleted) return b.daysCompleted - a.daysCompleted;
         return a.nickname.localeCompare(b.nickname);
       });
 
