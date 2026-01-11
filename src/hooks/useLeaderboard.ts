@@ -133,10 +133,13 @@ export const useLeaderboard = () => {
         };
       });
 
-      // Sort: primary by days completed (desc), secondary by nickname (alphabetical)
+      // Sort: primary by current streak (desc), then days completed (desc), then nickname (A→Z)
       leaderboardData.sort((a, b) => {
+        if (b.streak !== a.streak) return b.streak - a.streak;
         if (b.daysCompleted !== a.daysCompleted) return b.daysCompleted - a.daysCompleted;
-        return a.nickname.localeCompare(b.nickname);
+        const nameCmp = a.nickname.localeCompare(b.nickname);
+        if (nameCmp !== 0) return nameCmp;
+        return a.userId.localeCompare(b.userId);
       });
 
       setMembers(leaderboardData);
