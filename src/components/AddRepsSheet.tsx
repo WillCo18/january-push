@@ -11,6 +11,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
+import hulkHoganGif from "@/assets/hulk-hogan-celebration.gif";
 
 interface AddRepsSheetProps {
   isOpen: boolean;
@@ -18,10 +23,17 @@ interface AddRepsSheetProps {
   onAdd: (reps: number, date?: string) => Promise<boolean | undefined>;
 }
 
+// Check if today is January 12th, 2026
+const isHulkHoganDay = () => {
+  const now = new Date();
+  return now.getFullYear() === 2026 && now.getMonth() === 0 && now.getDate() === 12;
+};
+
 export const AddRepsSheet = ({ isOpen, onClose, onAdd }: AddRepsSheetProps) => {
   const [display, setDisplay] = useState("");
   const [backfill, setBackfill] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [showHulkCelebration, setShowHulkCelebration] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const today = new Date();
@@ -52,10 +64,22 @@ export const AddRepsSheet = ({ isOpen, onClose, onAdd }: AddRepsSheetProps) => {
       
       const success = await onAdd(reps, dateToLog);
       if (success) {
-        setDisplay("");
-        setBackfill(false);
-        setSelectedDate(undefined);
-        onClose();
+        // Show Hulk Hogan celebration on Jan 12, 2026 only
+        if (isHulkHoganDay()) {
+          setShowHulkCelebration(true);
+          setTimeout(() => {
+            setShowHulkCelebration(false);
+            setDisplay("");
+            setBackfill(false);
+            setSelectedDate(undefined);
+            onClose();
+          }, 2500);
+        } else {
+          setDisplay("");
+          setBackfill(false);
+          setSelectedDate(undefined);
+          onClose();
+        }
       }
     } finally {
       setSubmitting(false);
@@ -64,10 +88,25 @@ export const AddRepsSheet = ({ isOpen, onClose, onAdd }: AddRepsSheetProps) => {
 
   const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"];
 
-  if (!isOpen) return null;
+  if (!isOpen && !showHulkCelebration) return null;
 
   return (
     <>
+      {/* Hulk Hogan Celebration Dialog */}
+      <Dialog open={showHulkCelebration} onOpenChange={setShowHulkCelebration}>
+        <DialogContent className="sm:max-w-md border-none bg-transparent shadow-none flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <img 
+              src={hulkHoganGif} 
+              alt="Hulk Hogan Celebration" 
+              className="w-64 h-auto rounded-lg"
+            />
+            <p className="text-2xl font-bold text-white drop-shadow-lg text-center">
+              BROTHER! 💪
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
