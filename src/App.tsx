@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useForceRefresh } from "@/hooks/useForceRefresh";
 import Index from "./pages/Index";
 import { LoginPage } from "./pages/LoginPage";
 import { SetNicknamePage } from "./pages/SetNicknamePage";
@@ -181,6 +182,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Main app content with auth protection
 const AppRoutes = () => {
+  // Subscribe to force refresh signals
+  useForceRefresh();
+  
   return (
     <Routes>
       <Route
