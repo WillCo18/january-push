@@ -113,6 +113,8 @@ export const CalendarTab = ({ challenge }: CalendarTabProps) => {
         isOpen={selectedDay !== null}
         onClose={() => setSelectedDay(null)}
         onAdd={handleAddReps}
+        currentReps={selectedDay !== null ? getLogForDay(selectedDay) : 0}
+        dailyTarget={dailyTarget}
       />
     </div>
   );

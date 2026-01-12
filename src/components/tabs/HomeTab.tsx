@@ -190,6 +190,8 @@ export const HomeTab = () => {
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
         onAdd={handleAddReps}
+        currentReps={todayReps}
+        dailyTarget={dailyTarget}
       />
 
       {/* 10-Day Streak Celebration */}

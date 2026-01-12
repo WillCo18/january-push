@@ -16,11 +16,14 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import hulkHoganGif from "@/assets/hulk-hogan-celebration.gif";
+import { DailyCompletionCelebration } from "./DailyCompletionCelebration";
 
 interface AddRepsSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (reps: number, date?: string) => Promise<boolean | undefined>;
+  currentReps: number;
+  dailyTarget: number;
 }
 
 // Check if today is January 12th, 2026
@@ -29,11 +32,12 @@ const isHulkHoganDay = () => {
   return now.getFullYear() === 2026 && now.getMonth() === 0 && now.getDate() === 12;
 };
 
-export const AddRepsSheet = ({ isOpen, onClose, onAdd }: AddRepsSheetProps) => {
+export const AddRepsSheet = ({ isOpen, onClose, onAdd, currentReps, dailyTarget }: AddRepsSheetProps) => {
   const [display, setDisplay] = useState("");
   const [backfill, setBackfill] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [showHulkCelebration, setShowHulkCelebration] = useState(false);
+  const [showDailyCelebration, setShowDailyCelebration] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const today = new Date();
@@ -58,14 +62,29 @@ export const AddRepsSheet = ({ isOpen, onClose, onAdd }: AddRepsSheetProps) => {
 
     setSubmitting(true);
     try {
-      const dateToLog = backfill && selectedDate 
-        ? format(selectedDate, "yyyy-MM-dd") 
+      const dateToLog = backfill && selectedDate
+        ? format(selectedDate, "yyyy-MM-dd")
         : undefined;
-      
+
       const success = await onAdd(reps, dateToLog);
       if (success) {
-        // Show Hulk Hogan celebration on Jan 12, 2026 only
-        if (isHulkHoganDay()) {
+        // Check if user is completing their daily goal (not backfilling)
+        const wasIncomplete = currentReps < dailyTarget;
+        const willBeComplete = currentReps + reps >= dailyTarget;
+        const isLoggingToday = !backfill || !selectedDate;
+
+        if (isLoggingToday && wasIncomplete && willBeComplete) {
+          // Show daily completion celebration with rotating GIF
+          setShowDailyCelebration(true);
+          setTimeout(() => {
+            setShowDailyCelebration(false);
+            setDisplay("");
+            setBackfill(false);
+            setSelectedDate(undefined);
+            onClose();
+          }, 3000);
+        } else if (isHulkHoganDay() && isLoggingToday) {
+          // Bonus: Show Hulk Hogan celebration on Jan 12, 2026
           setShowHulkCelebration(true);
           setTimeout(() => {
             setShowHulkCelebration(false);
@@ -88,17 +107,24 @@ export const AddRepsSheet = ({ isOpen, onClose, onAdd }: AddRepsSheetProps) => {
 
   const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"];
 
-  if (!isOpen && !showHulkCelebration) return null;
+  if (!isOpen && !showHulkCelebration && !showDailyCelebration) return null;
 
   return (
     <>
+      {/* Daily Completion Celebration */}
+      <DailyCompletionCelebration
+        day={today.getDate()}
+        isOpen={showDailyCelebration}
+        onClose={() => setShowDailyCelebration(false)}
+      />
+
       {/* Hulk Hogan Celebration Dialog */}
       <Dialog open={showHulkCelebration} onOpenChange={setShowHulkCelebration}>
         <DialogContent className="sm:max-w-md border-none bg-transparent shadow-none flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <img 
-              src={hulkHoganGif} 
-              alt="Hulk Hogan Celebration" 
+            <img
+              src={hulkHoganGif}
+              alt="Hulk Hogan Celebration"
               className="w-64 h-auto rounded-lg"
             />
             <p className="text-2xl font-bold text-white drop-shadow-lg text-center">

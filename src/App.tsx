@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useForceRefresh } from "@/hooks/useForceRefresh";
+import { useVersionCheck } from "@/hooks/useVersionCheck";
+import { UpdateAvailableBanner } from "@/components/UpdateAvailableBanner";
 import Index from "./pages/Index";
 import { LoginPage } from "./pages/LoginPage";
 import { SetNicknamePage } from "./pages/SetNicknamePage";
@@ -184,9 +186,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => {
   // Subscribe to force refresh signals
   useForceRefresh();
-  
+
+  // Check for app version updates
+  const { updateAvailable, refreshApp } = useVersionCheck();
+
   return (
-    <Routes>
+    <>
+      {updateAvailable && <UpdateAvailableBanner onRefresh={refreshApp} />}
+      <Routes>
       <Route
         path="/"
         element={
@@ -214,7 +221,8 @@ const AppRoutes = () => {
       <Route path="/join/:code" element={<JoinGroupPage />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </>
   );
 };
 
