@@ -91,12 +91,12 @@ export const HomeTab = () => {
   const handleAddReps = async (reps: number, date?: string) => {
     const success = await addReps(reps, date);
     if (success) {
-      toast.success(`Added ${reps} reps!`);
+      toast.success(`Added ${reps} reps!`, { duration: 4000 });
       // Refetch both activity and group progress
       refetchActivity();
       refetchGroup();
     } else {
-      toast.error("Failed to add reps");
+      toast.error("Failed to add reps", { duration: 4000 });
     }
     return success;
   };
@@ -178,7 +178,10 @@ export const HomeTab = () => {
       <div className="fixed bottom-24 left-4 right-4 max-w-md mx-auto">
         <Button
           className="w-full h-14 bg-[#00A699] hover:bg-[#00A699]/90 text-white text-lg shadow-lg"
-          onClick={() => setIsSheetOpen(true)}
+          onClick={() => {
+            toast.dismiss(); // Dismiss any existing toast
+            setIsSheetOpen(true);
+          }}
         >
           <Plus className="h-5 w-5 mr-2" />
           Count today's press-ups
