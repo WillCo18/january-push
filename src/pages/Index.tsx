@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { HomeTab } from "@/components/tabs/HomeTab";
 import { CalendarTab } from "@/components/tabs/CalendarTab";
@@ -12,9 +12,19 @@ import { Settings } from "lucide-react";
 type Tab = "home" | "calendar" | "friends" | "profile";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("home");
+  const [searchParams] = useSearchParams();
+  const initialTab = (searchParams.get("tab") as Tab) || "home";
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const challenge = useChallenge();
   const navigate = useNavigate();
+
+  // Update tab when URL changes
+  useEffect(() => {
+    const tabParam = searchParams.get("tab") as Tab;
+    if (tabParam && ["home", "calendar", "friends", "profile"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   const renderTab = () => {
     switch (activeTab) {
