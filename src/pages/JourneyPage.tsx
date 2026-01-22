@@ -84,7 +84,7 @@ export const JourneyPage = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/?tab=friends")}
               className="mb-4 -ml-2 text-muted-foreground"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
